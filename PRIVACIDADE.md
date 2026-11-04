@@ -12,3 +12,7 @@ Esta versão experimental não usa servidor próprio, anúncios, telemetria nem 
 A instalação e o pareamento devem ocorrer com conhecimento e consentimento de um responsável legal
 
 Antes de distribuição como serviço de segurança infantil, são necessários auditoria independente, testes de confiabilidade, proteção de dados, autenticação de identidade e medidas de recuperação de falhas
+
+## SMS do número autorizado (v1.2)
+
+Ao tocar **ATIVAR AVISO SOS POR SMS**, o adulto informa um único número da criança. A permissão RECEIVE_SMS permite que o Android entregue eventos de recebimento ao aplicativo. O app descarta mensagens que não tenham o prefixo `CHIMPI-SOS | NÍVEL:` e não correspondam ao número registrado, mas a permissão do sistema é sensível. O número cadastrado e a opção de ativação permanecem armazenados somente no aparelho do adulto. O conteúdo de um alerta pode aparecer como notificação privada, e a pessoa pode desligar o recebimento a qualquer momento. Remetentes SMS podem ser falsificados e o app não verifica identidade por criptografia

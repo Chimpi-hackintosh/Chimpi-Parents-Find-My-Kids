@@ -15,7 +15,7 @@ public class MainActivity extends Activity {
  static final String CHANNEL="chimpi-local-alertas";
  @Override public void onCreate(Bundle b){super.onCreate(b);
  ScrollView scroll=new ScrollView(this);LinearLayout box=new LinearLayout(this);box.setOrientation(1);box.setPadding(24,32,24,32);scroll.addView(box);setContentView(scroll);
- title(box,"🐒 Chimpi Parents Find My Kids");setupWifi(box);
+ title(box,"🐒 Chimpi Parents Find My Kids");setupSmsChip(box);setupWifi(box);
  note(box,"PRÉVIA DE TESTES • O aplicativo não lê SMS automaticamente, nem valida a identidade de quem enviou");
  title(box,"Recebi um CHIMPI-SOS");
  text=new EditText(this);text.setHint("Cole o SMS recebido da criança");text.setMinLines(3);box.addView(text);
@@ -42,7 +42,16 @@ public class MainActivity extends Activity {
  @Override protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);shared(i);}
  void shared(Intent i){if(i==null||!Intent.ACTION_SEND.equals(i.getAction()))return;
  CharSequence s=i.getCharSequenceExtra(Intent.EXTRA_TEXT);
- if(s!=null&&text!=null){text.setText(s);analyze(s.toString());}}
+ if(s!=null&&text!=null){text.setText(s);analyze(s.toString());}
+ if("com.chimpi.parents.SMS_SOS_ALERT".equals(i.getAction())){
+   String message=i.getStringExtra("sos_body");
+   String level=i.getStringExtra("sos_level");
+   if(message!=null&&text!=null&&status!=null){
+     text.setText(message);
+     alarm(level==null?"EXTREMO":level,"SOS recebido pelo chip de contato cadastrado. A identidade não é verificada por criptografia:\n"+message);
+     speakSmsAlert();
+   }
+ }}
  void analyze(String s){
  if(s==null||!s.contains("CHIMPI-SOS | NÍVEL:")){status.setText("Mensagem não reconhecida");return;}
  String level=s.contains("NÍVEL: EXTREMO")?"EXTREMO":s.contains("NÍVEL: ATENÇÃO")?"ATENÇÃO":"MÍNIMO";
@@ -68,7 +77,7 @@ public class MainActivity extends Activity {
  void title(LinearLayout box,String s){TextView t=new TextView(this);t.setText(s);t.setTextSize(21);t.setTypeface(Typeface.DEFAULT,1);t.setPadding(0,18,0,8);box.addView(t);}
  void note(LinearLayout box,String s){TextView t=new TextView(this);t.setText(s);t.setTextSize(14);box.addView(t);}
  Button button(LinearLayout box,String s,int color){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextColor(-1);b.setBackgroundTintList(ColorStateList.valueOf(color));box.addView(b);return b;}
- @Override protected void onDestroy(){stop();super.onDestroy();}
+ @Override protected void onDestroy(){stop();if(voice!=null){voice.stop();voice.shutdown();voice=null;}super.onDestroy();}
 
  // ================== EventoSOS na rede Wi-Fi local ==================
  void setupWifi(LinearLayout box){
@@ -119,6 +128,67 @@ public class MainActivity extends Activity {
      if(!found.isEmpty())return found;
    }catch(Exception ignored){}
    return "Wi-Fi não encontrado";
+ }
+
+
+ // ================== EventoSOS por chip/SMS ==================
+ EditText childNumber;
+ android.speech.tts.TextToSpeech voice;
+ void setupSmsChip(LinearLayout root){
+   title(root,"📱 EventoSOS via chip (Brasil e exterior)");
+   note(root,"Cadastre somente o número da criança autorizada, com DDI (+55 no Brasil). O app não monitora SMS de outros números");
+   android.content.SharedPreferences p=getSharedPreferences("smsfamily",MODE_PRIVATE);
+   childNumber=new EditText(this);
+   childNumber.setHint("Número da criança: +55 21 99999-9999");
+   childNumber.setSingleLine(true);
+   childNumber.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
+   childNumber.setText(p.getString("child_phone",""));
+   root.addView(childNumber);
+   button(root,"✅ ATIVAR AVISO SOS POR SMS",0xff258963).setOnClickListener(v->{
+     String digits=childNumber.getText().toString().trim().replaceAll("[^+0-9]","");
+     if(!digits.matches("\\+\\d{10,15}")){
+       Toast.makeText(this,"Digite o número com DDI, por exemplo +5521999999999",Toast.LENGTH_LONG).show();
+       return;
+     }
+     new AlertDialog.Builder(this).setTitle("Ativar alerta do chip?")
+       .setMessage("Autorizar avisos apenas de "+digits+"? O aplicativo receberá a notificação de SOS se houver sinal celular e se o Android permitir. SMS pode ser falsificado. Confirme com a criança")
+       .setNegativeButton("Cancelar",null)
+       .setPositiveButton("Ativar",(d,w)->{
+         p.edit().putString("child_phone",digits).putBoolean("sms_enabled",true).apply();
+         if(checkSelfPermission(Manifest.permission.RECEIVE_SMS)!=PackageManager.PERMISSION_GRANTED)
+           requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},88);
+         else Toast.makeText(this,"Avisos por chip ativados",Toast.LENGTH_LONG).show();
+       }).show();
+   });
+   button(root,"⛔ DESATIVAR AVISO POR SMS",0xff63738c).setOnClickListener(v->{
+     p.edit().putBoolean("sms_enabled",false).apply();
+     Toast.makeText(this,"Leitura de SOS por chip desativada",Toast.LENGTH_LONG).show();
+   });
+   note(root,"Os alertas recebidos pelo chip usam notificação com som e vibração. Ao abrir o aviso, o app também tentará falar ALERTA! SEU FILHO OU FILHA ESTÁ EM APUROS!");
+   note(root,"No Reino Unido, cadastre o mesmo número brasileiro da criança. Com sinal de operadora e SMS internacional funcionando, a tia no Brasil e os pais no exterior podem receber mensagens separadas");
+ }
+ void speakSmsAlert(){
+   try{
+     if(voice!=null){voice.stop();voice.shutdown();voice=null;}
+     voice=new android.speech.tts.TextToSpeech(this,statusCode->{
+       if(statusCode!=android.speech.tts.TextToSpeech.SUCCESS||voice==null)return;
+       voice.setLanguage(new java.util.Locale("pt","BR"));
+       voice.setAudioAttributes(new android.media.AudioAttributes.Builder()
+         .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+         .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH).build());
+       voice.speak("ALERTA! SEU FILHO OU FILHA ESTÁ EM APUROS!",
+         android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"chimpi-sms-alert");
+     });
+   }catch(Exception ignored){}
+ }
+ @Override public void onRequestPermissionsResult(int code,String[] requested,int[] grants){
+   super.onRequestPermissionsResult(code,requested,grants);
+   if(code==88){
+     if(grants.length==0||grants[0]!=PackageManager.PERMISSION_GRANTED){
+       getSharedPreferences("smsfamily",MODE_PRIVATE).edit().putBoolean("sms_enabled",false).apply();
+       Toast.makeText(this,"Sem permissão de SMS. Aviso por chip não ativado",Toast.LENGTH_LONG).show();
+     }else Toast.makeText(this,"Avisos por chip ativados",Toast.LENGTH_LONG).show();
+   }
  }
 
 }
