@@ -1,15 +1,13 @@
 # 🐒 Chimpi Parents Find My Kids
 
-Aplicativo Android de **demonstração** para familiares
+**Prévia experimental Android para familiares**
 
-⚠️ **PRÉVIA DE TESTES, NÃO É UM SISTEMA DE EMERGÊNCIA CERTIFICADO**
+APK em [Releases](../../releases) após compilação automática
 
-- Analisa mensagens `CHIMPI-SOS` **coladas ou compartilhadas manualmente**
-- Emite alarme local e vibração conforme nível escolhido no alerta
-- O app não recebe SMS automaticamente, não comprova a origem dos avisos e não ignora o modo silencioso
-- Nenhum alerta funciona remotamente se não houver comunicação entre aparelhos
-- Em perigo imediato, ligue **190**
+Funções: colar/compartilhar texto CHIMPI-SOS, identificar 3 gravidades, aviso sonoro, vibração, notificação e opção silenciar
 
-Os APKs de teste serão disponibilizados em [Releases](../../releases) após compilação automática no GitHub Actions
+⚠️ A mensagem precisa ser copiada ou compartilhada manualmente. Não há recebimento automático de SMS ou alerta em segundo plano. O som depende das configurações do Android e o texto não é autenticado
 
-Consulte `PRIVACIDADE.md` e `LIMITACOES.md` antes de instalar
+Em perigo imediato ligue **190**
+
+`gradle :app:assembleDebug` (Java 17, Gradle 8.9, SDK 35)

@@ -1,0 +1,33 @@
+name: APK Chimpi Parents Find My Kids
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: gradle :app:assembleDebug --no-daemon
+      - run: cp app/build/outputs/apk/debug/app-debug.apk Chimpi-Parents-Find-My-Kids-v1.0.0-preview.1.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Chimpi-Parents-Find-My-Kids-APK
+          path: Chimpi-Parents-Find-My-Kids-v1.0.0-preview.1.apk
+      - name: Publicar APK na Release de prévia
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v1.0.0-preview.1 >/dev/null 2>&1 || gh release create v1.0.0-preview.1 --title "Chimpi Parents Find My Kids - prévia 1.0.0" --prerelease --notes-file LIMITACOES.md
+          gh release upload v1.0.0-preview.1 Chimpi-Parents-Find-My-Kids-v1.0.0-preview.1.apk --clobber
