@@ -15,7 +15,7 @@ public class MainActivity extends Activity {
  static final String CHANNEL="chimpi-local-alertas";
  @Override public void onCreate(Bundle b){super.onCreate(b);
  ScrollView scroll=new ScrollView(this);LinearLayout box=new LinearLayout(this);box.setOrientation(1);box.setPadding(24,32,24,32);scroll.addView(box);setContentView(scroll);
- title(box,"🐒 Chimpi Parents Find My Kids");
+ title(box,"🐒 Chimpi Parents Find My Kids");setupWifi(box);
  note(box,"PRÉVIA DE TESTES • O aplicativo não lê SMS automaticamente, nem valida a identidade de quem enviou");
  title(box,"Recebi um CHIMPI-SOS");
  text=new EditText(this);text.setHint("Cole o SMS recebido da criança");text.setMinLines(3);box.addView(text);
@@ -69,4 +69,56 @@ public class MainActivity extends Activity {
  void note(LinearLayout box,String s){TextView t=new TextView(this);t.setText(s);t.setTextSize(14);box.addView(t);}
  Button button(LinearLayout box,String s,int color){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextColor(-1);b.setBackgroundTintList(ColorStateList.valueOf(color));box.addView(b);return b;}
  @Override protected void onDestroy(){stop();super.onDestroy();}
+
+ // ================== EventoSOS na rede Wi-Fi local ==================
+ void setupWifi(LinearLayout box){
+   title(box,"📶 EventoSOS | Parear celular da criança");
+   note(box,"Os dois aparelhos precisam estar na mesma rede Wi-Fi. Para receber SOS, ative a escuta e mantenha a notificação de serviço visível. Não garante entrega");
+   android.content.SharedPreferences prefs=getSharedPreferences("pair",MODE_PRIVATE);
+   if(!prefs.contains("secret")){byte[] bytes=new byte[32];new java.security.SecureRandom().nextBytes(bytes);prefs.edit().putString("secret",android.util.Base64.encodeToString(bytes,android.util.Base64.NO_WRAP|android.util.Base64.NO_PADDING|android.util.Base64.URL_SAFE)).apply();}
+   String ip=localIp();
+   TextView address=new TextView(this);address.setText("IP deste celular: "+ip+"\nPorta: 45881");address.setTextSize(19);address.setTextIsSelectable(true);box.addView(address);
+   TextView codeView=new TextView(this);codeView.setText("Chave de pareamento (32 bytes):\n"+prefs.getString("secret",""));codeView.setTextIsSelectable(true);codeView.setTextSize(15);box.addView(codeView);
+   note(box,"Copie o IP e a chave no app da criança, somente com autorização do responsável. Não divulgue a chave");
+   button(box,"✅ ATIVAR RECEBIMENTO SOS",0xff258963).setOnClickListener(v->{
+     try{
+       Intent i=new Intent(this,SosListenerService.class);i.setAction("START");
+       if(Build.VERSION.SDK_INT>=26)startForegroundService(i);else startService(i);
+       Toast.makeText(this,"Recebimento ativado: confira notificação",Toast.LENGTH_LONG).show();
+     }catch(Exception e){Toast.makeText(this,"Não foi possível ativar: "+e.getMessage(),Toast.LENGTH_LONG).show();}
+   });
+   button(box,"⛔ Parar recebimento",0xff63738c).setOnClickListener(v->{
+     stopService(new Intent(this,SosListenerService.class));
+     Toast.makeText(this,"Recebimento interrompido",Toast.LENGTH_LONG).show();
+   });
+   button(box,"🔁 Trocar chave de segurança",0xff63738c).setOnClickListener(v->
+     new AlertDialog.Builder(this).setTitle("Revogar a chave antiga?")
+     .setMessage("Os celulares que usam a chave anterior deixarão de conseguir enviar SOS até serem pareados novamente")
+     .setNegativeButton("Cancelar",null).setPositiveButton("Trocar chave",(d,w)->{
+       byte[] bytes=new byte[32];new java.security.SecureRandom().nextBytes(bytes);
+       String newKey=android.util.Base64.encodeToString(bytes,android.util.Base64.URL_SAFE|android.util.Base64.NO_WRAP|android.util.Base64.NO_PADDING);
+       prefs.edit().putString("secret",newKey).apply();codeView.setText("Chave de pareamento (32 bytes):\n"+newKey);
+     }).show());
+ }
+ String localIp(){
+   try{
+     java.util.Enumeration<java.net.NetworkInterface> interfaces=java.net.NetworkInterface.getNetworkInterfaces();
+     String found="";
+     while(interfaces.hasMoreElements()){
+       java.net.NetworkInterface n=interfaces.nextElement();
+       if(!n.isUp()||n.isLoopback())continue;
+       java.util.Enumeration<java.net.InetAddress> ips=n.getInetAddresses();
+       while(ips.hasMoreElements()){
+         java.net.InetAddress addr=ips.nextElement();
+         if(addr instanceof java.net.Inet4Address&&addr.isSiteLocalAddress()){
+           if(n.getName().startsWith("wlan"))return addr.getHostAddress();
+           if(found.isEmpty())found=addr.getHostAddress();
+         }
+       }
+     }
+     if(!found.isEmpty())return found;
+   }catch(Exception ignored){}
+   return "Wi-Fi não encontrado";
+ }
+
 }
