@@ -315,11 +315,8 @@ public class MainActivity extends Activity {
       +" contatos. A entrega de SMS NÃO foi confirmada");
  }
  void speakStatusConfirmed(){
-   try{
-     android.speech.tts.TextToSpeech speaker=new android.speech.tts.TextToSpeech(this,null);
-     speaker.shutdown();
-   }catch(Exception ignored){}
-   // Mensagem sem detalhes da emergência, exibida na tela
+   // Notificação de status aos pais é intencionalmente discreta
+   // e não reproduz informações sobre o ocorrido
  }
 
 }

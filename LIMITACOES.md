@@ -36,3 +36,7 @@ Este APK é **debug de testes**
 - Os pais precisam cadastrar tanto o número da criança quanto o da tia; a tia precisa cadastrar os telefones dos pais manualmente
 - Não há autenticação criptográfica em SMS, SMS pode ser spoofado e a operadora pode perder mensagens
 - A entrega internacional, o toque do alarme e as permissões em segundo plano precisam ser testados em aparelhos físicos antes de uso real
+
+### Limites de v1.3.1
+
+Status de falha só pode ser produzido quando o pedido de envio inicial no aparelho da criança lança um erro. A aceitação do pedido de envio NÃO garante recebimento, e o aplicativo não detecta automaticamente falhas posteriores, falta de resposta ou perigo. Nunca use o app como única linha de assistência

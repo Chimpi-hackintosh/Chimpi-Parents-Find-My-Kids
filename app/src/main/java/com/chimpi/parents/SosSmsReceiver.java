@@ -44,6 +44,8 @@ public class SosSmsReceiver extends BroadcastReceiver {
        notifyStatus(context,body,false);
      }else if(body.startsWith("CHIMPI-STATUS | CONFIRMADO")&&senderIsCaregiver){
        notifyStatus(context,body,true);
+     }else if(body.startsWith("CHIMPI-STATUS | FALHA")&&senderIsChild){
+       notifyFailure(context,body);
      }
      return;
    }
@@ -61,6 +63,29 @@ public class SosSmsReceiver extends BroadcastReceiver {
    java.util.regex.Matcher m=java.util.regex.Pattern.compile("(?m)^ID: ([A-Z0-9]{8})$").matcher(body);
    return m.find()?m.group(1):"";
  }
+
+ private static void notifyFailure(Context c,String body){
+   NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
+   if(nm==null)return;
+   final String channelId="chimpi_status_error_v131";
+   NotificationChannel channel=new NotificationChannel(channelId,"Falha no acionamento do cuidador",NotificationManager.IMPORTANCE_HIGH);
+   channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+   nm.createNotificationChannel(channel);
+   Intent open=new Intent(c,MainActivity.class);
+   open.setAction("com.chimpi.parents.STATUS_UPDATE");
+   open.putExtra("status_message","NÃO FOI POSSÍVEL ENCAMINHAR O SOS AO FAMILIAR\nContate a criança diretamente\nID: "+parseId(body));
+   PendingIntent pending=PendingIntent.getActivity(c,(int)(System.currentTimeMillis()%1000000000L),open,
+       PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+   if(Build.VERSION.SDK_INT>=33&&c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return;
+   nm.notify((int)(System.currentTimeMillis()%1000000000L),
+      new Notification.Builder(c,channelId)
+        .setSmallIcon(android.R.drawable.ic_dialog_alert)
+        .setContentTitle("EventoSOS: falha ao acionar familiar")
+        .setContentText("Contate a criança imediatamente")
+        .setVisibility(Notification.VISIBILITY_PRIVATE)
+        .setContentIntent(pending).setAutoCancel(true).build());
+ }
+
  private static void notifyStatus(Context c,String body,boolean confirmed){
    NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
    if(nm==null)return;

@@ -47,3 +47,7 @@ No Chimpi Parents, selecione **Tia / Cuidador local** ou **Mãe / Pai (somente a
 - SMS comum pode ser falsificado, falhar ou cobrar tarifa internacional, e as permissões SEND_SMS/RECEIVE_SMS dependem de autorizações do Android
 
 Esta ainda é uma prévia para testes, não um serviço de emergência certificado
+
+### Ajuste v1.3.1
+
+O modo Pais agora reconhece também `CHIMPI-STATUS | FALHA`: quando o telefone da criança detecta uma falha imediata ao pedir o envio de SMS ao cuidador, pode avisar os pais para contactarem a criança diretamente. Não confunda isso com falhas posteriores da operadora, que o protótipo não identifica
