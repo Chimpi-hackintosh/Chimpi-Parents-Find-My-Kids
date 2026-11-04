@@ -23,3 +23,14 @@ Em perigo imediato ligue **190**
 O serviço do responsável só fica ativo após a pessoa o ligar voluntariamente e mostra notificação permanente. **Não é rastreamento**, nem chamada à polícia. Não funciona em redes diferentes, com aparelhos sem Wi-Fi local, roteadores com isolamento de dispositivos, ou se o Android encerrar o serviço. Não há entrega garantida nem confirmação humana de visualização.
 
 A chave permite autenticar e criptografar mensagens AES-256-GCM nesta rede local; jamais compartilhe com desconhecidos. Use **Trocar chave** para revogar.
+
+
+## Aviso de suporte
+
+O aplicativo compara a versão instalada com a prévia realmente publicada v1.1.0-preview.1 e usa o idioma do Android — português ou inglês como alternativa
+
+Antes de 04/11/2026 às 00h UTC o texto informa a aproximação do fim do suporte e, a partir desse instante, informa que versões anteriores não recebem mais atualizações de segurança
+
+Versões antigas que ainda não possuem o verificador precisam de uma atualização manual inicial pela página oficial de Releases
+
+Código em PR não é um novo APK publicado nem uma atualização já instalada
