@@ -40,18 +40,30 @@ public class MainActivity extends Activity {
  shared(getIntent());
  }
  @Override protected void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);shared(i);}
- void shared(Intent i){if(i==null||!Intent.ACTION_SEND.equals(i.getAction()))return;
- CharSequence s=i.getCharSequenceExtra(Intent.EXTRA_TEXT);
- if(s!=null&&text!=null){text.setText(s);analyze(s.toString());}
+ void shared(Intent i){
+ if(i==null)return;
+ if("com.chimpi.parents.STATUS_UPDATE".equals(i.getAction())){
+   String message=i.getStringExtra("status_message");
+   if(message!=null&&status!=null){
+      status.setText(message);
+      if(message.contains("CONFIRMADO"))speakStatusConfirmed();
+   }
+   return;
+ }
  if("com.chimpi.parents.SMS_SOS_ALERT".equals(i.getAction())){
    String message=i.getStringExtra("sos_body");
-   String level=i.getStringExtra("sos_level");
+   String lvl=i.getStringExtra("sos_level");
    if(message!=null&&text!=null&&status!=null){
-     text.setText(message);
-     alarm(level==null?"EXTREMO":level,"SOS recebido pelo chip de contato cadastrado. A identidade não é verificada por criptografia:\n"+message);
-     speakSmsAlert();
+      text.setText(message);
+      alarm(lvl==null?"EXTREMO":lvl,"SOS por chip do contato registrado. Remetente não verificado criptograficamente:\n"+message);
+      speakSmsAlert();
    }
- }}
+   return;
+ }
+ if(!Intent.ACTION_SEND.equals(i.getAction()))return;
+ CharSequence s=i.getCharSequenceExtra(Intent.EXTRA_TEXT);
+ if(s!=null&&text!=null){text.setText(s);analyze(s.toString());}
+}
  void analyze(String s){
  if(s==null||!s.contains("CHIMPI-SOS | NÍVEL:")){status.setText("Mensagem não reconhecida");return;}
  String level=s.contains("NÍVEL: EXTREMO")?"EXTREMO":s.contains("NÍVEL: ATENÇÃO")?"ATENÇÃO":"MÍNIMO";
@@ -136,6 +148,36 @@ public class MainActivity extends Activity {
  android.speech.tts.TextToSpeech voice;
  void setupSmsChip(LinearLayout root){
    title(root,"📱 EventoSOS via chip (Brasil e exterior)");
+
+   android.content.SharedPreferences prefs=getSharedPreferences("smsfamily",MODE_PRIVATE);
+   note(root,"Selecione quem está usando este aparelho. Somente o cuidador local recebe o relato completo");
+   Spinner roleSelector=new Spinner(this);
+   roleSelector.setAdapter(new android.widget.ArrayAdapter<String>(this,
+       android.R.layout.simple_spinner_dropdown_item,new String[]{"Tia / cuidador local","Mãe / pai (somente andamento)"}));
+   String currentRole=prefs.getString("role","caregiver");
+   roleSelector.setSelection("parent".equals(currentRole)?1:0);
+   root.addView(roleSelector);
+   roleSelector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+     @Override public void onItemSelected(android.widget.AdapterView<?> parent,android.view.View view,int pos,long id){
+       String role=pos==1?"parent":"caregiver";
+       prefs.edit().putString("role",role).apply();
+       if(ackButton!=null)ackButton.setVisibility(pos==0?android.view.View.VISIBLE:android.view.View.GONE);
+     }
+     @Override public void onNothingSelected(android.widget.AdapterView<?> parent){}
+   });
+   note(root,"Cuidador: configure os telefones dos pais para avisá-los quando você confirmar a ajuda. Pais: configure o telefone da tia para receber o andamento");
+   motherPhone=new EditText(this);motherPhone.setHint("Telefone da mãe: +55 ou +44");motherPhone.setInputType(android.text.InputType.TYPE_CLASS_PHONE);motherPhone.setSingleLine(true);motherPhone.setText(prefs.getString("mother_phone",""));root.addView(motherPhone);
+   fatherPhone=new EditText(this);fatherPhone.setHint("Telefone do pai: +55 ou +44");fatherPhone.setInputType(android.text.InputType.TYPE_CLASS_PHONE);fatherPhone.setSingleLine(true);fatherPhone.setText(prefs.getString("father_phone",""));root.addView(fatherPhone);
+   auntPhone=new EditText(this);auntPhone.setHint("Telefone da tia/cuidador: +55");auntPhone.setInputType(android.text.InputType.TYPE_CLASS_PHONE);auntPhone.setSingleLine(true);auntPhone.setText(prefs.getString("caregiver_phone",""));root.addView(auntPhone);
+   button(root,"💾 Salvar contatos para acompanhamento",0xff2458e7).setOnClickListener(v->{
+      storeRolePhones();
+      Toast.makeText(this,"Contatos salvos",Toast.LENGTH_SHORT).show();
+   });
+   ackButton=button(root,"✅ ESTOU AJUDANDO • AVISAR OS PAIS",0xff258963);
+   ackButton.setVisibility("parent".equals(currentRole)?android.view.View.GONE:android.view.View.VISIBLE);
+   ackButton.setOnClickListener(v->confirmAssistance());
+   note(root,"A notificação da tia mostra o SOS completo. Só aperte 'Estou ajudando' quando tiver realmente começado a ajudar");
+
    note(root,"Cadastre somente o número da criança autorizada, com DDI (+55 no Brasil). O app não monitora SMS de outros números");
    android.content.SharedPreferences p=getSharedPreferences("smsfamily",MODE_PRIVATE);
    childNumber=new EditText(this);
@@ -154,7 +196,7 @@ public class MainActivity extends Activity {
        .setMessage("Autorizar avisos apenas de "+digits+"? O aplicativo receberá a notificação de SOS se houver sinal celular e se o Android permitir. SMS pode ser falsificado. Confirme com a criança")
        .setNegativeButton("Cancelar",null)
        .setPositiveButton("Ativar",(d,w)->{
-         p.edit().putString("child_phone",digits).putBoolean("sms_enabled",true).apply();
+         storeRolePhones();p.edit().putString("child_phone",digits).putBoolean("sms_enabled",true).apply();
          if(checkSelfPermission(Manifest.permission.RECEIVE_SMS)!=PackageManager.PERMISSION_GRANTED)
            requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},88);
          else Toast.makeText(this,"Avisos por chip ativados",Toast.LENGTH_LONG).show();
@@ -165,7 +207,7 @@ public class MainActivity extends Activity {
      Toast.makeText(this,"Leitura de SOS por chip desativada",Toast.LENGTH_LONG).show();
    });
    note(root,"Os alertas recebidos pelo chip usam notificação com som e vibração. Ao abrir o aviso, o app também tentará falar ALERTA! SEU FILHO OU FILHA ESTÁ EM APUROS!");
-   note(root,"No Reino Unido, cadastre o mesmo número brasileiro da criança. Com sinal de operadora e SMS internacional funcionando, a tia no Brasil e os pais no exterior podem receber mensagens separadas");
+   note(root,"PAIS: mensagens CHIMPI-STATUS de andamento apenas. TIA: SOS completo e botão para confirmar ajuda. SMS internacional depende de sinal e operadora");
  }
  void speakSmsAlert(){
    try{
@@ -183,12 +225,101 @@ public class MainActivity extends Activity {
  }
  @Override public void onRequestPermissionsResult(int code,String[] requested,int[] grants){
    super.onRequestPermissionsResult(code,requested,grants);
+   if(code==89){
+     if(grants.length>0&&grants[0]==PackageManager.PERMISSION_GRANTED&&ackSmsPermissionPending){
+       ackSmsPermissionPending=false;sendAssistanceStatus();
+     }else{
+       ackSmsPermissionPending=false;status.setText("Permissão para avisar os pais não concedida");
+     }
+   }
    if(code==88){
      if(grants.length==0||grants[0]!=PackageManager.PERMISSION_GRANTED){
        getSharedPreferences("smsfamily",MODE_PRIVATE).edit().putBoolean("sms_enabled",false).apply();
        Toast.makeText(this,"Sem permissão de SMS. Aviso por chip não ativado",Toast.LENGTH_LONG).show();
      }else Toast.makeText(this,"Avisos por chip ativados",Toast.LENGTH_LONG).show();
    }
+ }
+
+
+ EditText motherPhone,fatherPhone,auntPhone;
+ Button ackButton;
+ boolean ackSmsPermissionPending=false;
+ String digits(String input){
+    String num=input==null?"":input.trim().replaceAll("[^0-9+]","");
+    return num.matches("\\+\\d{10,15}")||num.matches("\\d{10,13}")?num:"";
+ }
+ void storeRolePhones(){
+   android.content.SharedPreferences.Editor ed=getSharedPreferences("smsfamily",MODE_PRIVATE).edit();
+   if(motherPhone!=null)ed.putString("mother_phone",digits(motherPhone.getText().toString()));
+   if(fatherPhone!=null)ed.putString("father_phone",digits(fatherPhone.getText().toString()));
+   if(auntPhone!=null)ed.putString("caregiver_phone",digits(auntPhone.getText().toString()));
+   ed.apply();
+ }
+ void confirmAssistance(){
+   storeRolePhones();
+   android.content.SharedPreferences prefs=getSharedPreferences("smsfamily",MODE_PRIVATE);
+   if(!"caregiver".equals(prefs.getString("role","caregiver"))){
+     status.setText("Este dispositivo está em modo pais, não pode confirmar ajuda");return;
+   }
+   String incident=prefs.getString("last_incident","");
+   long created=prefs.getLong("last_incident_at",0L);
+   if(!incident.matches("[A-Z0-9]{8}")||System.currentTimeMillis()-created>86400000L||created>System.currentTimeMillis()){
+     status.setText("Nenhum SOS recente recebido pelo chip. Não é possível confirmar ajuda");return;
+   }
+   java.util.LinkedHashSet<String> phones=new java.util.LinkedHashSet<>();
+   for(String n:new String[]{prefs.getString("mother_phone",""),prefs.getString("father_phone","")}){
+     String safe=digits(n);
+     if(!safe.isEmpty())phones.add(safe);
+   }
+   if(phones.isEmpty()){status.setText("Cadastre telefone da mãe e/ou do pai para atualizar o acompanhamento");return;}
+   new AlertDialog.Builder(this).setTitle("Você está ajudando a criança?")
+     .setMessage("Somente confirme depois de ter começado a ajudar. Os pais receberão: 'Um familiar CONFIRMOU que está ajudando a criança'\n\nDestinatários:\n"+android.text.TextUtils.join("\n",phones)
+        +"\n\nO SMS pode gerar custo e não garante entrega")
+     .setNegativeButton("Cancelar",null)
+     .setPositiveButton("CONFIRMAR E ENVIAR",(d,w)->{
+        if(checkSelfPermission(Manifest.permission.SEND_SMS)!=PackageManager.PERMISSION_GRANTED){
+           ackSmsPermissionPending=true;
+           requestPermissions(new String[]{Manifest.permission.SEND_SMS},89);
+        }else sendAssistanceStatus();
+     }).show();
+ }
+ void sendAssistanceStatus(){
+   if(checkSelfPermission(Manifest.permission.SEND_SMS)!=PackageManager.PERMISSION_GRANTED){
+     status.setText("Sem permissão para enviar SMS, avise os pais por ligação");return;
+   }
+   storeRolePhones();
+   android.content.SharedPreferences prefs=getSharedPreferences("smsfamily",MODE_PRIVATE);
+   if(!"caregiver".equals(prefs.getString("role","caregiver")))return;
+   String incident=prefs.getString("last_incident","");
+   if(!incident.matches("[A-Z0-9]{8}")||System.currentTimeMillis()-prefs.getLong("last_incident_at",0)>86400000L)return;
+   String body="CHIMPI-STATUS | CONFIRMADO\nID: "+incident
+     +"\nUm familiar CONFIRMOU que está ajudando a criança"
+     +"\nConfira diretamente se precisar de mais informações";
+   java.util.LinkedHashSet<String> phones=new java.util.LinkedHashSet<>();
+   for(String n:new String[]{prefs.getString("mother_phone",""),prefs.getString("father_phone","")}){
+     String safe=digits(n);if(!safe.isEmpty())phones.add(safe);
+   }
+   int submitted=0;
+   try{
+     android.telephony.SmsManager sms=android.telephony.SmsManager.getDefault();
+     for(String number:phones){
+       try{
+         java.util.ArrayList<String> parts=sms.divideMessage(body);
+         if(parts.size()==1)sms.sendTextMessage(number,null,body,null,null);
+         else sms.sendMultipartTextMessage(number,null,parts,null,null);
+         submitted++;
+       }catch(Exception ignored){}
+     }
+   }catch(Exception ignored){}
+   status.setText("Aviso de ajuda solicitado para "+submitted+" de "+phones.size()
+      +" contatos. A entrega de SMS NÃO foi confirmada");
+ }
+ void speakStatusConfirmed(){
+   try{
+     android.speech.tts.TextToSpeech speaker=new android.speech.tts.TextToSpeech(this,null);
+     speaker.shutdown();
+   }catch(Exception ignored){}
+   // Mensagem sem detalhes da emergência, exibida na tela
  }
 
 }

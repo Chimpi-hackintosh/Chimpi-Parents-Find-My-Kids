@@ -19,22 +19,71 @@ public class SosSmsReceiver extends BroadcastReceiver {
    android.content.SharedPreferences prefs=context.getSharedPreferences("smsfamily",Context.MODE_PRIVATE);
    if(!prefs.getBoolean("sms_enabled",false))return;
    String allowed=prefs.getString("child_phone","");
+   String caregiver=prefs.getString("caregiver_phone","");
+   String role=prefs.getString("role","caregiver");
    if(allowed.isEmpty())return;
    SmsMessage[] messages=Telephony.Sms.Intents.getMessagesFromIntent(intent);
    if(messages==null||messages.length==0)return;
    String sender=messages[0].getOriginatingAddress();
-   if(!authorized(sender,allowed))return;
+
+   boolean senderIsChild=authorized(sender,allowed);
+   boolean senderIsCaregiver=authorized(sender,caregiver);
    StringBuilder text=new StringBuilder();
    for(SmsMessage part:messages){
-     if(part==null||!authorized(part.getOriginatingAddress(),allowed))return;
-     String t=part.getMessageBody();
-     if(t!=null)text.append(t);
+     if(part==null)return;
+     String from=part.getOriginatingAddress();
+     if(!authorized(from,allowed)&&!authorized(from,caregiver))return;
+     String fragment=part.getMessageBody();
+     if(fragment!=null)text.append(fragment);
    }
    String body=text.toString();
-   if(!body.startsWith("CHIMPI-SOS | NÍVEL: ")||body.length()>1600)return;
+   if(body.length()>1600)return;
+   if("parent".equals(role)){
+     // Pais recebem apenas o andamento, NÃO recebem conteúdo sensível do SOS
+     if(body.startsWith("CHIMPI-STATUS | AGUARDANDO")&&senderIsChild){
+       notifyStatus(context,body,false);
+     }else if(body.startsWith("CHIMPI-STATUS | CONFIRMADO")&&senderIsCaregiver){
+       notifyStatus(context,body,true);
+     }
+     return;
+   }
+   if(!"caregiver".equals(role))return;
+   if(!senderIsChild||!body.startsWith("CHIMPI-SOS | NÍVEL: "))return;
+   String incident=parseId(body);
+   if(incident.isEmpty())return;
+   prefs.edit().putString("last_incident",incident).putLong("last_incident_at",System.currentTimeMillis()).apply();
    String level=body.contains("NÍVEL: EXTREMO")?"EXTREMO":body.contains("NÍVEL: ATENÇÃO")?"ATENÇÃO":"MÍNIMO";
    notifyEmergency(context,level,body);
+
  }
+
+ private static String parseId(String body){
+   java.util.regex.Matcher m=java.util.regex.Pattern.compile("(?m)^ID: ([A-Z0-9]{8})$").matcher(body);
+   return m.find()?m.group(1):"";
+ }
+ private static void notifyStatus(Context c,String body,boolean confirmed){
+   NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
+   if(nm==null)return;
+   String channelId="chimpi_status_v13";
+   NotificationChannel ch=new NotificationChannel(channelId,"Andamento da ajuda",NotificationManager.IMPORTANCE_DEFAULT);
+   ch.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+   nm.createNotificationChannel(ch);
+   String headline=confirmed?"Um familiar confirmou que está ajudando":"Um familiar foi acionado";
+   String content=confirmed?"Ajuda confirmada pelo próprio familiar":"Aguardando confirmação de ajuda";
+   Intent open=new Intent(c,MainActivity.class);
+   open.setAction("com.chimpi.parents.STATUS_UPDATE");
+   open.putExtra("status_message",headline+"\n"+content+"\n"+parseId(body));
+   open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+   PendingIntent pi=PendingIntent.getActivity(c,(int)(System.currentTimeMillis()%1000000000L),open,
+       PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+   if(Build.VERSION.SDK_INT>=33&&c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return;
+   nm.notify((int)(System.currentTimeMillis()%1000000000L),
+     new Notification.Builder(c,channelId).setSmallIcon(android.R.drawable.ic_dialog_info)
+       .setContentTitle(headline).setContentText(content)
+       .setCategory(Notification.CATEGORY_STATUS).setVisibility(Notification.VISIBILITY_PRIVATE)
+       .setContentIntent(pi).setAutoCancel(true).build());
+ }
+
  private boolean authorized(String sender,String expected){
    if(sender==null)return false;
    String a=sender.replaceAll("[^0-9]","");

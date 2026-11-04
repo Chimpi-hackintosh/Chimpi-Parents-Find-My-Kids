@@ -27,3 +27,12 @@ Este APK é **debug de testes**
 - O funcionamento à distância depende da operadora, do envio internacional e da conectividade celular; não depende do mesmo Wi-Fi
 - Não oferece leitura confirmada, despacho policial, rastreamento automático ou garantia de que um adulto recebeu o aviso
 - Google Play restringe RECEIVE_SMS; este código é experimental e não está aprovado para distribuição na loja
+
+## Restrições de privacidade e fluxo cuidador/pais
+
+- Modo pais rejeita SOS detalhado recebido pelo chip ou Wi-Fi, e mostra somente mensagens de status
+- Mensagem "familiar está ajudando" exige ato explícito do cuidador local na interface
+- O botão "estou ajudando" somente fica utilizável após o app receber um SOS com identificador de incidente válido e dentro de 24 horas
+- Os pais precisam cadastrar tanto o número da criança quanto o da tia; a tia precisa cadastrar os telefones dos pais manualmente
+- Não há autenticação criptográfica em SMS, SMS pode ser spoofado e a operadora pode perder mensagens
+- A entrega internacional, o toque do alarme e as permissões em segundo plano precisam ser testados em aparelhos físicos antes de uso real

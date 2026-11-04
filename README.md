@@ -35,3 +35,15 @@ A configuração exige autorização de cada adulto. A opção **DESATIVAR AVISO
 **Sem garantia de entrega**: a criança deve ter SMS da operadora, os familiares precisam de sinal celular e pode haver bloqueio de SMS internacional e custo. O telefone remetente pode ser falsificado, portanto a identificação por número **não equivale a autenticação criptográfica**. Notificações podem ser silenciadas pelo Android e o aplicativo não confirma visualização
 
 Esta versão é experimental e distribuída via GitHub para testes. O uso de permissões SMS é restrito por políticas do Google Play e não implica aceitação da loja
+
+## 🚨 EventoSOS por papel familiar (v1.3.0-preview.1)
+
+No Chimpi Parents, selecione **Tia / Cuidador local** ou **Mãe / Pai (somente andamento)**
+
+- **Tia ou cuidador**: recebe SMS `CHIMPI-SOS` com os detalhes, se o número da criança corresponder ao que foi cadastrado. Depois de começar a ajudar, abre o aplicativo e toca em **ESTOU AJUDANDO • AVISAR OS PAIS**. O aplicativo tenta enviar SMS com `CHIMPI-STATUS | CONFIRMADO` para os números da mãe e do pai cadastrados pela tia
+- **Mãe e pai**: cadastrando tanto o número da criança quanto o da tia, recebem somente `CHIMPI-STATUS | AGUARDANDO` diretamente da criança e `CHIMPI-STATUS | CONFIRMADO` enviado pela tia. Não recebem a descrição do problema
+- O app **não considera SOS recebido automaticamente como prova de assistência**. A confirmação depende de uma ação humana
+- Sem resposta da tia, permanece “aguardando confirmação”, e os pais podem contactar os envolvidos
+- SMS comum pode ser falsificado, falhar ou cobrar tarifa internacional, e as permissões SEND_SMS/RECEIVE_SMS dependem de autorizações do Android
+
+Esta ainda é uma prévia para testes, não um serviço de emergência certificado
