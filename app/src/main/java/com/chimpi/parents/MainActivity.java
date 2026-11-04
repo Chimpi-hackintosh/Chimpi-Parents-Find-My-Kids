@@ -15,7 +15,7 @@ public class MainActivity extends Activity {
  static final String CHANNEL="chimpi-local-alertas";
  @Override public void onCreate(Bundle b){super.onCreate(b);
  ScrollView scroll=new ScrollView(this);LinearLayout box=new LinearLayout(this);box.setOrientation(1);box.setPadding(24,32,24,32);scroll.addView(box);setContentView(scroll);
- SupportNotice.showIfRequired(this,BuildConfig.VERSION_NAME);
+ SupportNotice.showIfRequired(this);
  title(box,"🐒 Chimpi Parents Find My Kids");setupWifi(box);
  note(box,"PRÉVIA DE TESTES • O aplicativo não lê SMS automaticamente, nem valida a identidade de quem enviou");
  title(box,"Recebi um CHIMPI-SOS");

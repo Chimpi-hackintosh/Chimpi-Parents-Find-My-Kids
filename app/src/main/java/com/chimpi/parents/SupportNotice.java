@@ -13,7 +13,13 @@ final class SupportNotice {
 
     private SupportNotice() {}
 
-    static void showIfRequired(Activity activity, String installedVersion) {
+    static void showIfRequired(Activity activity) {
+        String installedVersion;
+        try {
+            installedVersion = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
+        } catch (Exception error) {
+            return;
+        }
         SupportPolicy.Notice notice = SupportPolicy.notice(
             APP, installedVersion, Instant.now(), Locale.getDefault().toLanguageTag());
         if (notice == null || activity.isFinishing()) return;
