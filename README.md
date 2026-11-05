@@ -51,3 +51,14 @@ Esta ainda é uma prévia para testes, não um serviço de emergência certifica
 ### Ajuste v1.3.1
 
 O modo Pais agora reconhece também `CHIMPI-STATUS | FALHA`: quando o telefone da criança detecta uma falha imediata ao pedir o envio de SMS ao cuidador, pode avisar os pais para contactarem a criança diretamente. Não confunda isso com falhas posteriores da operadora, que o protótipo não identifica
+
+
+## Aviso de suporte
+
+O aplicativo compara a versão instalada com a prévia publicada v1.3.1-preview.1 e detecta o idioma do Android, usando português ou inglês como alternativa
+
+Após 04/11/2026 às 00h UTC, versões anteriores informam que não recebem mais atualizações de segurança e apontam somente para a Release oficial
+
+Versões antigas sem o verificador precisam de uma atualização manual inicial
+
+Código neste PR não é um APK novo, não atualiza instalações existentes e não publica Release
