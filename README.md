@@ -24,13 +24,41 @@ O serviço do responsável só fica ativo após a pessoa o ligar voluntariamente
 
 A chave permite autenticar e criptografar mensagens AES-256-GCM nesta rede local; jamais compartilhe com desconhecidos. Use **Trocar chave** para revogar.
 
+## 🌍 EventoSOS por chip/SMS v1.2.0-preview.1
+
+Cada familiar (tia no Brasil, mãe e pai no Reino Unido, por exemplo) pode instalar este aplicativo e cadastrar o mesmo telefone da criança com DDI, como **+55**, além de conceder as permissões de **RECEIVE_SMS** e **POST_NOTIFICATIONS** no Android
+
+Se um SMS começar com `CHIMPI-SOS | NÍVEL:` e vier do telefone cadastrado, o app tenta emitir **notificação com alarme e vibração**. Ao abrir a notificação, tenta ler em voz alta **“ALERTA! SEU FILHO OU FILHA ESTÁ EM APUROS!”**
+
+A configuração exige autorização de cada adulto. A opção **DESATIVAR AVISO POR SMS** interrompe a detecção. O app não lê mensagens de outros números dentro do código da aplicação, mas a permissão do Android é sensível, e sua concessão é responsabilidade do adulto
+
+**Sem garantia de entrega**: a criança deve ter SMS da operadora, os familiares precisam de sinal celular e pode haver bloqueio de SMS internacional e custo. O telefone remetente pode ser falsificado, portanto a identificação por número **não equivale a autenticação criptográfica**. Notificações podem ser silenciadas pelo Android e o aplicativo não confirma visualização
+
+Esta versão é experimental e distribuída via GitHub para testes. O uso de permissões SMS é restrito por políticas do Google Play e não implica aceitação da loja
+
+## 🚨 EventoSOS por papel familiar (v1.3.0-preview.1)
+
+No Chimpi Parents, selecione **Tia / Cuidador local** ou **Mãe / Pai (somente andamento)**
+
+- **Tia ou cuidador**: recebe SMS `CHIMPI-SOS` com os detalhes, se o número da criança corresponder ao que foi cadastrado. Depois de começar a ajudar, abre o aplicativo e toca em **ESTOU AJUDANDO • AVISAR OS PAIS**. O aplicativo tenta enviar SMS com `CHIMPI-STATUS | CONFIRMADO` para os números da mãe e do pai cadastrados pela tia
+- **Mãe e pai**: cadastrando tanto o número da criança quanto o da tia, recebem somente `CHIMPI-STATUS | AGUARDANDO` diretamente da criança e `CHIMPI-STATUS | CONFIRMADO` enviado pela tia. Não recebem a descrição do problema
+- O app **não considera SOS recebido automaticamente como prova de assistência**. A confirmação depende de uma ação humana
+- Sem resposta da tia, permanece “aguardando confirmação”, e os pais podem contactar os envolvidos
+- SMS comum pode ser falsificado, falhar ou cobrar tarifa internacional, e as permissões SEND_SMS/RECEIVE_SMS dependem de autorizações do Android
+
+Esta ainda é uma prévia para testes, não um serviço de emergência certificado
+
+### Ajuste v1.3.1
+
+O modo Pais agora reconhece também `CHIMPI-STATUS | FALHA`: quando o telefone da criança detecta uma falha imediata ao pedir o envio de SMS ao cuidador, pode avisar os pais para contactarem a criança diretamente. Não confunda isso com falhas posteriores da operadora, que o protótipo não identifica
+
 
 ## Aviso de suporte
 
-O aplicativo compara a versão instalada com a prévia realmente publicada v1.1.0-preview.1 e usa o idioma do Android — português ou inglês como alternativa
+O aplicativo compara a versão instalada com a prévia publicada v1.3.1-preview.1 e detecta o idioma do Android, usando português ou inglês como alternativa
 
-Antes de 04/11/2026 às 00h UTC o texto informa a aproximação do fim do suporte e, a partir desse instante, informa que versões anteriores não recebem mais atualizações de segurança
+Após 04/11/2026 às 00h UTC, versões anteriores informam que não recebem mais atualizações de segurança e apontam somente para a Release oficial
 
-Versões antigas que ainda não possuem o verificador precisam de uma atualização manual inicial pela página oficial de Releases
+Versões antigas sem o verificador precisam de uma atualização manual inicial
 
-Código em PR não é um novo APK publicado nem uma atualização já instalada
+Código neste PR não é um APK novo, não atualiza instalações existentes e não publica Release

@@ -6,16 +6,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 final class SupportPolicy {
-    static final String MINIMUM = "1.1.0-preview.1";
-    static final String AVAILABLE = "v1.1.0-preview.1";
+    static final String MINIMUM = "1.3.1-preview.1";
+    static final String AVAILABLE = "v1.3.1-preview.1";
     static final Instant CUTOFF = Instant.parse("2026-11-04T00:00:00Z");
-    private static final Pattern VERSION = Pattern.compile("^v?(\\d+)\\.(\\d+)\\.(\\d+)(?:[-+][A-Za-z0-9.-]+)?$");
+    private static final Pattern VERSION = Pattern.compile(
+        "^v?(\\d+)\\.(\\d+)\\.(\\d+)(?:-([A-Za-z0-9.-]+))?(?:\\+[A-Za-z0-9.-]+)?$");
 
     private SupportPolicy() {}
 
     static boolean isUnsupported(String installed) {
-        int[] current = parse(installed);
-        int[] minimum = parse(MINIMUM);
+        Version current = parse(installed);
+        Version minimum = parse(MINIMUM);
         return current != null && minimum != null && compare(current, minimum) < 0;
     }
 
@@ -52,22 +53,54 @@ final class SupportPolicy {
         return new Notice(title, body, after, pt);
     }
 
-    private static int[] parse(String value) {
+    private static Version parse(String value) {
         if (value == null || value.length() > 100) return null;
         Matcher matcher = VERSION.matcher(value);
         if (!matcher.matches()) return null;
         try {
-            return new int[] {Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)), Integer.parseInt(matcher.group(3))};
+            return new Version(
+                Integer.parseInt(matcher.group(1)),
+                Integer.parseInt(matcher.group(2)),
+                Integer.parseInt(matcher.group(3)),
+                matcher.group(4));
         } catch (NumberFormatException ignored) {
             return null;
         }
     }
 
-    private static int compare(int[] left, int[] right) {
-        for (int index = 0; index < 3; index++) {
-            if (left[index] != right[index]) return Integer.compare(left[index], right[index]);
+    private static int compare(Version left, Version right) {
+        int core = Integer.compare(left.major, right.major);
+        if (core == 0) core = Integer.compare(left.minor, right.minor);
+        if (core == 0) core = Integer.compare(left.patch, right.patch);
+        if (core != 0) return core;
+        if (left.pre == null && right.pre == null) return 0;
+        if (left.pre == null) return 1;
+        if (right.pre == null) return -1;
+        String[] a = left.pre.split("\\.");
+        String[] b = right.pre.split("\\.");
+        for (int index = 0; index < Math.min(a.length, b.length); index++) {
+            if (a[index].equals(b[index])) continue;
+            boolean an = a[index].matches("\\d+");
+            boolean bn = b[index].matches("\\d+");
+            if (an && bn) return Long.compare(Long.parseLong(a[index]), Long.parseLong(b[index]));
+            if (an != bn) return an ? -1 : 1;
+            return a[index].compareTo(b[index]);
         }
-        return 0;
+        return Integer.compare(a.length, b.length);
+    }
+
+    private static final class Version {
+        final int major;
+        final int minor;
+        final int patch;
+        final String pre;
+
+        Version(int major, int minor, int patch, String pre) {
+            this.major = major;
+            this.minor = minor;
+            this.patch = patch;
+            this.pre = pre;
+        }
     }
 
     static final class Notice {

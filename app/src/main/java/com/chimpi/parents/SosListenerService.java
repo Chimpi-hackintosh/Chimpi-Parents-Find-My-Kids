@@ -101,6 +101,7 @@ public class SosListenerService extends Service {
    if(!id.matches("[a-f0-9\\-]{36}")||Math.abs(System.currentTimeMillis()-when)>300000)return;
    if("TEST".equals(type)){out.writeUTF("TEST_OK:"+id);out.flush();return;}
    if(!"SOS".equals(type))return;
+   if("parent".equals(getSharedPreferences("smsfamily",MODE_PRIVATE).getString("role","caregiver")))return; // Não mostrar detalhes ao perfil dos pais
    String severity=event.optString("level","EXTREMO");
    if(!"MÍNIMO".equals(severity)&&!"ATENÇÃO".equals(severity)&&!"EXTREMO".equals(severity))return;
    String message=event.optString("message","Preciso de ajuda");

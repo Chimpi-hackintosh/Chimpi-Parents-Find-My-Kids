@@ -1,11 +1,13 @@
 # Política de suporte
 
 - Corte: **04/11/2026 às 00h UTC**
-- Mínima sustentada: **1.1.0-preview.1**
-- Release verificada: [v1.1.0-preview.1](https://github.com/Chimpi-hackintosh/Chimpi-Parents-Find-My-Kids/releases/tag/v1.1.0-preview.1)
+- Mínima sustentada: **1.3.1-preview.1**
+- Release verificada: [v1.3.1-preview.1](https://github.com/Chimpi-hackintosh/Chimpi-Parents-Find-My-Kids/releases/tag/v1.3.1-preview.1)
 - Canal: prévia experimental
 
-O aviso só aparece quando a versão instalada é numericamente anterior à mínima, usa português quando o idioma do sistema é português e inglês para os demais idiomas
+O aviso compara também os identificadores de prévia, portanto 1.3.1-preview.0 fica abaixo de 1.3.1-preview.1, enquanto a versão estável 1.3.1 não fica abaixo da prévia
+
+Português segue o idioma do sistema e qualquer idioma sem tradução usa inglês
 
 A mensagem muda exatamente no corte UTC, não afirma infecção e não instala arquivos automaticamente
 

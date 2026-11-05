@@ -29,15 +29,15 @@ jobs:
           javac -d build/support-check app/src/main/java/com/chimpi/parents/SupportPolicy.java app/src/testSupport/java/com/chimpi/parents/SupportPolicyTest.java
           java -cp build/support-check com.chimpi.parents.SupportPolicyTest
       - run: gradle :app:assembleDebug --no-daemon
-      - run: cp app/build/outputs/apk/debug/app-debug.apk Chimpi-Parents-Find-My-Kids-v1.1.0-preview.1.apk
+      - run: cp app/build/outputs/apk/debug/app-debug.apk Chimpi-Parents-Find-My-Kids-v1.3.1-preview.1.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Chimpi-Parents-Find-My-Kids-APK
-          path: Chimpi-Parents-Find-My-Kids-v1.1.0-preview.1.apk
+          path: Chimpi-Parents-Find-My-Kids-v1.3.1-preview.1.apk
       - name: Publicar APK na Release de prévia
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view v1.1.0-preview.1 >/dev/null 2>&1 || gh release create v1.1.0-preview.1 --title "Chimpi Parents Find My Kids - prévia 1.1.0" --prerelease --notes-file LIMITACOES.md
-          gh release upload v1.1.0-preview.1 Chimpi-Parents-Find-My-Kids-v1.1.0-preview.1.apk --clobber
+          gh release view v1.3.1-preview.1 >/dev/null 2>&1 || gh release create v1.3.1-preview.1 --title "Chimpi Parents Find My Kids - prévia 1.3.1" --prerelease --notes-file LIMITACOES.md
+          gh release upload v1.3.1-preview.1 Chimpi-Parents-Find-My-Kids-v1.3.1-preview.1.apk --clobber

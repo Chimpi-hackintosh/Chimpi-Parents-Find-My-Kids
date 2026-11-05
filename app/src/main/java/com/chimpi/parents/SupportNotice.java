@@ -9,7 +9,7 @@ import java.util.Locale;
 
 final class SupportNotice {
     private static final String APP = "Chimpi Parents Find My Kids";
-    private static final String RELEASE = "https://github.com/Chimpi-hackintosh/Chimpi-Parents-Find-My-Kids/releases/tag/v1.1.0-preview.1";
+    private static final String RELEASE = "https://github.com/Chimpi-hackintosh/Chimpi-Parents-Find-My-Kids/releases/tag/v1.3.1-preview.1";
 
     private SupportNotice() {}
 
