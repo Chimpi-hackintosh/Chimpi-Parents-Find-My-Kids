@@ -2,7 +2,9 @@
 
 **Prévia experimental Android para familiares**
 
-APK em [Releases](../../releases) após compilação automática
+APK de teste em [Releases](../../releases) somente após publicação manual autorizada; pushes e pull requests geram apenas artefatos do Actions
+
+O workflow publica uma prévia somente em uma execução manual com `publish_release=true`; por padrão, o build apenas gera um artefato
 
 Funções: colar/compartilhar texto CHIMPI-SOS, identificar 3 gravidades, aviso sonoro, vibração, notificação e opção silenciar
 
